@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#24114b">
+  <title>L’Étoile d’Audani</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root{--bg:#130a28;--card:#24114b;--card2:#321762;--accent:#a970ff;--accent2:#e0c6ff;--text:#fff;--muted:#cbbce6;--ok:#63d6a3;--danger:#ff7c9b}
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#3b1970 0,#130a28 48%,#090413 100%);color:var(--text);min-height:100vh}
+    .app{max-width:760px;margin:auto;padding:20px 14px 50px}
+    header{text-align:center;padding:18px 0 14px} h1{margin:0;font-size:28px} .subtitle{color:var(--accent2);margin-top:6px}
+    .card{background:rgba(36,17,75,.92);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:16px;margin:14px 0;box-shadow:0 12px 35px rgba(0,0,0,.25)}
+    h2{font-size:18px;margin:0 0 14px}.row{display:flex;gap:10px;align-items:center}.grow{flex:1}
+    input{width:100%;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:#170b32;color:#fff;font-size:16px}
+    input:focus{outline:2px solid var(--accent)}
+    .objectives{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+    label.option{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.06);padding:10px;border-radius:12px;font-size:14px}
+    input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+    button{border:0;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer}
+    .primary{width:100%;margin-top:14px;background:linear-gradient(135deg,#8b4cff,#c288ff);color:white}
+    .secondary{background:rgba(255,255,255,.1);color:white}.danger{background:rgba(255,124,155,.16);color:#ffb3c3}
+    .tabs{display:flex;gap:8px;overflow:auto;margin:12px 0}.tab{white-space:nowrap;background:rgba(255,255,255,.08);color:var(--muted)}.tab.active{background:var(--accent);color:white}
+    .person{padding:14px;border-radius:16px;background:rgba(255,255,255,.055);margin-top:10px}
+    .personTop{display:flex;justify-content:space-between;gap:10px;align-items:center}.name{font-weight:800;font-size:17px}.badge{font-size:12px;padding:6px 9px;border-radius:999px;background:rgba(169,112,255,.2);color:#e7d5ff}
+    .tasks{margin-top:10px}.task{display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid rgba(255,255,255,.07)}.done{text-decoration:line-through;color:#9d92b1}
+    .actions{display:flex;gap:8px;margin-top:10px}.small{padding:8px 11px;font-size:13px}
+    .empty{text-align:center;color:var(--muted);padding:24px}.meta{color:var(--muted);font-size:13px}
+    @media(max-width:480px){.objectives{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="app">
+<header><h1>✨ L’Étoile d’Audani</h1><div class="subtitle">Gestion des demandes du live</div></header>
+
+<div class="card">
+  <div class="row"><div class="grow"><h2>📅 Live</h2></div><input id="liveDate" type="date" style="max-width:180px"></div>
+  <input id="liveName" placeholder="Nom du live (facultatif)" style="margin-top:10px">
+</div>
+
+<div class="card">
+  <h2>➕ Ajouter une personne</h2>
+  <input id="username" placeholder="Pseudo TikTok">
+  <div class="objectives" id="objectiveList"></div>
+  <button class="primary" id="addBtn">➕ Ajouter à la liste d’attente</button>
+</div>
+
+<div class="card">
+  <div class="row"><div class="grow"><h2>⏳ Liste d’attente</h2><div class="meta" id="count"></div></div></div>
+  <div class="tabs">
+    <button class="tab active" data-filter="waiting">À faire</button>
+    <button class="tab" data-filter="all">Toutes</button>
+    <button class="tab" data-filter="done">Terminées</button>
+  </div>
+  <div id="people"></div>
+</div>
+</div>
+
+<script>
+const OBJECTIVES=[
+"Carte du jour","Guide ou Anges","Datation précise","Pensée de l’autre",
+"État d’esprit","Question pendule","Question développée","Guidance Astro",
+"Tirage domaine complet","Tirage du mois","Tirage complet 1 an"
+];
+const KEY="etoile-audani-v1";
+let state=JSON.parse(localStorage.getItem(KEY)||'{"people":[],"date":"","name":""}');
+let filter="waiting";
+const $=s=>document.querySelector(s);
+const save=()=>{state.date=$("#liveDate").value;state.name=$("#liveName").value;localStorage.setItem(KEY,JSON.stringify(state));render();}
+function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+function renderObjectives(){ $("#objectiveList").innerHTML=OBJECTIVES.map((o,i)=>`<label class="option"><input type="checkbox" value="${i}">${o}</label>`).join("");}
+function render(){
+  $("#liveDate").value=state.date||new Date().toISOString().slice(0,10);
+  $("#liveName").value=state.name||"";
+  let p=state.people.filter(x=>filter==="all"||filter==="done"?x.tasks.every(t=>t.done):x.tasks.some(t=>!t.done));
+  if(filter==="done")p=state.people.filter(x=>x.tasks.every(t=>t.done));
+  $("#count").textContent=`${state.people.filter(x=>x.tasks.some(t=>!t.done)).length} personne(s) encore en attente`;
+  $("#people").innerHTML=p.length?p.map(person=>{
+    const done=person.tasks.filter(t=>t.done).length, total=person.tasks.length;
+    return `<div class="person">
+      <div class="personTop"><div><div class="name">${esc(person.name)}</div><div class="meta">${done}/${total} prestation(s) terminée(s)</div></div><div class="badge">${done===total?"✅ Terminé":"⏳ En attente"}</div></div>
+      <div class="tasks">${person.tasks.map((t,i)=>`<div class="task ${t.done?"done":""}"><input type="checkbox" ${t.done?"checked":""} onchange="toggleTask('${person.id}',${i},this.checked)"><span>${esc(t.name)}</span></div>`).join("")}</div>
+      <div class="actions"><button class="secondary small" onclick="moveTop('${person.id}')">⬆️ Priorité</button><button class="danger small" onclick="removePerson('${person.id}')">🗑️ Supprimer</button></div>
+    </div>`;
+  }).join(""):`<div class="empty">Aucune personne dans cette liste pour le moment.</div>`;
+}
+window.toggleTask=(id,i,v)=>{let p=state.people.find(x=>x.id===id);p.tasks[i].done=v;save()}
+window.removePerson=id=>{if(confirm("Supprimer cette personne ?")){state.people=state.people.filter(x=>x.id!==id);save()}}
+window.moveTop=id=>{let i=state.people.findIndex(x=>x.id===id);let [p]=state.people.splice(i,1);state.people.unshift(p);save()}
+$("#addBtn").onclick=()=>{
+  const name=$("#username").value.trim();
+  const chosen=[...document.querySelectorAll("#objectiveList input:checked")].map(x=>({name:OBJECTIVES[x.value],done:false}));
+  if(!name)return alert("Entre le pseudo TikTok.");
+  if(!chosen.length)return alert("Choisis au moins une prestation.");
+  state.people.push({id:Date.now().toString(),name,tasks:chosen,created:new Date().toISOString()});
+  $("#username").value="";document.querySelectorAll("#objectiveList input").forEach(x=>x.checked=false);save();
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{filter=b.dataset.filter;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));render()})
+$("#liveDate").onchange=save;$("#liveName").onchange=save;
+renderObjectives();render();
+</script>
+</body>
+</html>
