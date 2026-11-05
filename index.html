@@ -59,9 +59,17 @@
 
 <script>
 const OBJECTIVES=[
-"Carte du jour","Guide ou Anges","Datation précise","Pensée de l’autre",
-"État d’esprit","Question pendule","Question développée","Guidance Astro",
-"Tirage domaine complet","Tirage du mois","Tirage complet 1 an"
+{name:"Carte du jour",icon:"🃏"},
+{name:"Guide ou Anges",icon:"👼"},
+{name:"Datation précise",icon:"📅"},
+{name:"Pensée de l’autre",icon:"💭"},
+{name:"État d’esprit",icon:"🧠"},
+{name:"Question pendule",icon:"🔮"},
+{name:"Question développée",icon:"💬"},
+{name:"Guidance Astro",icon:"🌙"},
+{name:"Tirage domaine complet",icon:"✨"},
+{name:"Tirage du mois",icon:"🗓️"},
+{name:"Tirage complet 1 an",icon:"🕰️"}
 ];
 const KEY="etoile-audani-v1";
 let state=JSON.parse(localStorage.getItem(KEY)||'{"people":[],"date":"","name":""}');
@@ -69,7 +77,7 @@ let filter="waiting";
 const $=s=>document.querySelector(s);
 const save=()=>{state.date=$("#liveDate").value;state.name=$("#liveName").value;localStorage.setItem(KEY,JSON.stringify(state));render();}
 function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
-function renderObjectives(){ $("#objectiveList").innerHTML=OBJECTIVES.map((o,i)=>`<label class="option"><input type="checkbox" value="${i}">${o}</label>`).join("");}
+function renderObjectives(){ $("#objectiveList").innerHTML=OBJECTIVES.map((o,i)=>`<label class="option"><input type="checkbox" value="${i}"><span style="font-size:18px">${o.icon}</span><span>${o.name}</span></label>`).join("");}
 function render(){
   $("#liveDate").value=state.date||new Date().toISOString().slice(0,10);
   $("#liveName").value=state.name||"";
@@ -80,7 +88,7 @@ function render(){
     const done=person.tasks.filter(t=>t.done).length, total=person.tasks.length;
     return `<div class="person">
       <div class="personTop"><div><div class="name">${esc(person.name)}</div><div class="meta">${done}/${total} prestation(s) terminée(s)</div></div><div class="badge">${done===total?"✅ Terminé":"⏳ En attente"}</div></div>
-      <div class="tasks">${person.tasks.map((t,i)=>`<div class="task ${t.done?"done":""}"><input type="checkbox" ${t.done?"checked":""} onchange="toggleTask('${person.id}',${i},this.checked)"><span>${esc(t.name)}</span></div>`).join("")}</div>
+      <div class="tasks">${person.tasks.map((t,i)=>`<div class="task ${t.done?"done":""}"><input type="checkbox" ${t.done?"checked":""} onchange="toggleTask('${person.id}',${i},this.checked)"><span style="font-size:18px">${t.icon||"✨"}</span><span>${esc(t.name)}</span></div>`).join("")}</div>
       <div class="actions"><button class="secondary small" onclick="moveTop('${person.id}')">⬆️ Priorité</button><button class="danger small" onclick="removePerson('${person.id}')">🗑️ Supprimer</button></div>
     </div>`;
   }).join(""):`<div class="empty">Aucune personne dans cette liste pour le moment.</div>`;
@@ -90,7 +98,7 @@ window.removePerson=id=>{if(confirm("Supprimer cette personne ?")){state.people=
 window.moveTop=id=>{let i=state.people.findIndex(x=>x.id===id);let [p]=state.people.splice(i,1);state.people.unshift(p);save()}
 $("#addBtn").onclick=()=>{
   const name=$("#username").value.trim();
-  const chosen=[...document.querySelectorAll("#objectiveList input:checked")].map(x=>({name:OBJECTIVES[x.value],done:false}));
+  const chosen=[...document.querySelectorAll("#objectiveList input:checked")].map(x=>({name:OBJECTIVES[x.value].name,icon:OBJECTIVES[x.value].icon,done:false}));
   if(!name)return alert("Entre le pseudo TikTok.");
   if(!chosen.length)return alert("Choisis au moins une prestation.");
   state.people.push({id:Date.now().toString(),name,tasks:chosen,created:new Date().toISOString()});
